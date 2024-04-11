@@ -40,6 +40,7 @@ type cipher_st =
 type crypto_context = {
   sequence  : int64 ; (* sequence number *)
   cipher_st : cipher_st ; (* cipher state *)
+  traffic_secret : Cstruct.t ;
 }
 (* the raw handshake log we need to carry around *)
 type hs_log = Cstruct.t list
