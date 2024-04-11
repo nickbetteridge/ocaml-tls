@@ -49,6 +49,7 @@ let serve_ssl port callback =
       session_id = Cstruct.empty ;
       extended_ms = true ;
       alpn_protocol = None ;
+      quic_transport_parameters = None
     }
   and psk = {
     Tls.Core.identifier = hex "0000" ;

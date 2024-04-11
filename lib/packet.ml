@@ -362,6 +362,7 @@ type extension_type =
   | KEY_SHARE                              [@id 51] (*RFC8446*)
   | RENEGOTIATION_INFO                     [@id 0xFF01] (*RFC5746*)
   | DRAFT_SUPPORT                          [@id 0xFF02] (*draft*)
+  | QUIC_TRANSPORT_PARAMETERS              [@id 0x39]
 
 let extension_type_to_int = function
   | SERVER_NAME                            -> 0
@@ -409,6 +410,7 @@ let extension_type_to_int = function
   | KEY_SHARE                              -> 51 (*RFC8446*)
   | RENEGOTIATION_INFO                     -> 0xFF01 (*RFC5746*)
   | DRAFT_SUPPORT                          -> 0xFF02 (*draft*)
+  | QUIC_TRANSPORT_PARAMETERS              -> 0x39
 and int_to_extension_type = function
   | 0 -> Some SERVER_NAME
   | 1 -> Some MAX_FRAGMENT_LENGTH
@@ -455,6 +457,7 @@ and int_to_extension_type = function
   | 51 -> Some KEY_SHARE
   | 0xFF01 -> Some RENEGOTIATION_INFO
   | 0xFF02 -> Some DRAFT_SUPPORT
+  | 0x39 -> Some QUIC_TRANSPORT_PARAMETERS
   | _ -> None
 
 let extension_type_to_string et = string_of_int (extension_type_to_int et)

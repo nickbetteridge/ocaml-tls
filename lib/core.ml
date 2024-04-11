@@ -316,6 +316,7 @@ type client_extension = [
   | `Cookie of Cstruct.t
   | `PskKeyExchangeModes of psk_key_exchange_mode list
   | `ECPointFormats
+  | `QUICTransportParameters of Cstruct.t
   | `UnknownExtension of (int * Cstruct.t)
 ]
 
@@ -323,6 +324,7 @@ type server13_extension = [
   | `KeyShare of (group * Cstruct.t)
   | `PreSharedKey of int
   | `SelectedVersion of tls_version (* only used internally in writer!! *)
+  | `QUICTransportParameters of Cstruct.t
 ]
 
 type server_extension = [
@@ -342,6 +344,7 @@ type encrypted_extension = [
   | `SupportedGroups of group list
   | `ALPN of string
   | `EarlyDataIndication
+  | `QUICTransportParameters of Cstruct.t
   | `UnknownExtension of (int * Cstruct.t)
 ]
 
@@ -484,6 +487,7 @@ type epoch_data = {
   session_id             : SessionID.t ;
   extended_ms            : bool ;
   alpn_protocol          : string option ;
+  quic_transport_parameters : Cstruct.t option ;
 }
 
 let supports_key_usage ?(not_present = false) usage cert =
