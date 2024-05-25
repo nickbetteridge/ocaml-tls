@@ -50,6 +50,7 @@ let serve_ssl port callback =
       extended_ms = true ;
       alpn_protocol = None ;
       quic_transport_parameters = None
+      tls_unique = None ;
     }
   and psk = {
     Tls.Core.identifier = hex "0000" ;

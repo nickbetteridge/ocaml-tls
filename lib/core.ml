@@ -488,6 +488,7 @@ type epoch_data = {
   extended_ms            : bool ;
   alpn_protocol          : string option ;
   quic_transport_parameters : Cstruct.t option ;
+  tls_unique             : Cstruct.t option ;
 }
 
 let supports_key_usage ?(not_present = false) usage cert =

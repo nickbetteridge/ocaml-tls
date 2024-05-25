@@ -163,9 +163,10 @@ val handle_tls           : state -> Cstruct.t -> ret
     is a handshake in progress or scheduled. *)
 val handshake_in_progress : state -> bool
 
-(** [send_application_data tls outs] is [(tls' * out) option] where
+(** [send_application_data tls outs] is [Some (tls', out)] where
     [tls'] is the new tls state, and [out] the cstruct to send over the
-    wire (encrypted [outs]). *)
+    wire (encrypted [outs]) when the TLS session is ready. When the TLS
+    session is not ready it is [None]. *)
 val send_application_data : state -> Cstruct.t list -> (state * Cstruct.t) option
 
 (** [send_close_notify tls] is [tls' * out] where [tls'] is the new
@@ -196,3 +197,11 @@ val epoch : state -> (Core.epoch_data, unit) result
     [context]. *)
 val export_key_material : Core.epoch_data -> ?context:string -> string -> int ->
   Cstruct.t
+
+(** [channel_binding epoch_data mode] is the RFC 5929 and RFC 9266 specified
+    channel binding. Please note that [`Tls_unique] will error for TLS 1.3
+    sessions, and [`Tls_exporter] is not recommended for TLS < 1.3 sessions
+    (unless the uniqueness is ensured via another path). *)
+val channel_binding : Core.epoch_data ->
+  [ `Tls_exporter | `Tls_unique | `Tls_server_endpoint ] ->
+  (Cstruct.t, [ `Msg of string ]) result
