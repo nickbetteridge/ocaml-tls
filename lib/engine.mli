@@ -38,13 +38,13 @@
 (** {1 Abstract state type} *)
 
 (** The abstract type of a TLS state. *)
-type state
+type state = State.state
 
 (** {1 Constructors} *)
 
 (** [client client] is [tls * out] where [tls] is the initial state,
     and [out] the initial client hello *)
-val client : Config.client -> (state * string)
+val client : ?quic_transport_parameters:string -> Config.client -> (state * string)
 
 (** [server server] is [tls] where [tls] is the initial server
     state *)

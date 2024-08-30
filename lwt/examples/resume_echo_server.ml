@@ -49,6 +49,7 @@ let serve_ssl port callback =
       session_id = "" ;
       extended_ms = true ;
       alpn_protocol = None ;
+      quic_transport_parameters = None ;
       tls_unique = None ;
     }
   and psk = {

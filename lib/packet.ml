@@ -239,6 +239,7 @@ type extension_type =
   | POST_HANDSHAKE_AUTH                    [@id 49] (*RFC8446*)
   | KEY_SHARE                              [@id 51] (*RFC8446*)
   | RENEGOTIATION_INFO                     [@id 0xFF01] (*RFC5746*)
+  | QUIC_TRANSPORT_PARAMETERS              [@id 0x39] (*RFC9000*)
 
 let extension_type_to_int = function
   | SERVER_NAME                            -> 0
@@ -259,6 +260,7 @@ let extension_type_to_int = function
   | POST_HANDSHAKE_AUTH                    -> 49 (*RFC8446*)
   | KEY_SHARE                              -> 51 (*RFC8446*)
   | RENEGOTIATION_INFO                     -> 0xFF01 (*RFC5746*)
+  | QUIC_TRANSPORT_PARAMETERS              -> 0x39 (*RFC9000*)
 and int_to_extension_type = function
   | 0 -> Some SERVER_NAME
   | 1 -> Some MAX_FRAGMENT_LENGTH
@@ -278,6 +280,7 @@ and int_to_extension_type = function
   | 49 -> Some POST_HANDSHAKE_AUTH
   | 51 -> Some KEY_SHARE
   | 0xFF01 -> Some RENEGOTIATION_INFO
+  | 0x39 -> Some QUIC_TRANSPORT_PARAMETERS
   | _ -> None
 
 let extension_type_to_string et = string_of_int (extension_type_to_int et)
