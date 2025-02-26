@@ -1,3 +1,23 @@
+## v2.0.0 (2025-02-05)
+
+* Use dune variants (mirage-ptime) instead of functorising over PCLOCK
+  (#513 @hannesm)
+
+## v1.0.4 (2024-10-28)
+
+* Removed links to nqsb (we're no longer in charge of that domain)
+  (23c0deef586df4a1732efbf8d8da006111ca76e0,
+  f6455e37513a74da63dc8819dfc8dd1aaebafb9a, fixes #512 reported by @msub2)
+
+## v1.0.3 (2024-09-29)
+
+* tls-miou-unix: fix recursive call in read_in (#511 @dinosaure)
+
+## v1.0.2 (2024-09-04)
+
+* tls-lwt: `read` now has an optional `?off:int` argument (#510 @hannesm)
+* Use the kdf package instead of hkdf (#509 @hannesm)
+
 ## v1.0.1 (2024-08-25)
 
 * tls-miou-unix: fix file descriptor leak (#508 @dinosaure)
