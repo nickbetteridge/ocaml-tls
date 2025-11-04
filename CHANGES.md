@@ -1,3 +1,14 @@
+## v2.0.3 (2025-09-26)
+
+* Provide an implementation which uses the Unix module (distributed with OCaml),
+  based on the miou-unix implementation
+  (#518 #443 @kit-ty-kate @dinosaure, fixes #517)
+
+## v2.0.2 (2025-08-22)
+
+* put CERTIFICATE_UNKNOWN alert back (#516 @copy)
+* improve README (#514 @dinosaure)
+
 ## v2.0.1 (2025-04-14)
 
 * core, send_application_data: allocate much fewer data. previously, we
