@@ -484,6 +484,8 @@ let agreed_version supported (client_hello : client_hello) =
     | _ -> Error (`Error (`NoConfiguredVersions supported_versions))
 
 let answer_client_hello ?embed_quic_transport_params state (ch : client_hello) raw =
+  Printf.printf "[TLS.Handshake_server.answer_client_hello] Called with embed_quic_transport_params=%s\n%!"
+    (match embed_quic_transport_params with Some _ -> "Some" | None -> "None");
   let ensure_reneg ciphers their_data  =
     let reneg_cs = List.mem Packet.TLS_EMPTY_RENEGOTIATION_INFO_SCSV ciphers in
     let err = `Fatal (`Handshake (`Message "invalid renegotiation")) in
@@ -566,8 +568,13 @@ let answer_client_hello ?embed_quic_transport_params state (ch : client_hello) r
   in
 
   let* v = agreed_version state.config.protocol_versions ch in
+  Printf.printf "[TLS.Handshake_server.answer_client_hello] Agreed version: %s\n%!"
+    (match v with `TLS_1_3 -> "TLS_1_3" | _ -> "Other");
   match v with
-  | `TLS_1_3 -> Handshake_server13.answer_client_hello ?embed_quic_transport_params ~hrr:false state ch raw
+  | `TLS_1_3 ->
+    Printf.printf "[TLS.Handshake_server.answer_client_hello] Calling Handshake_server13.answer_client_hello with embed_quic_transport_params=%s\n%!"
+      (match embed_quic_transport_params with Some _ -> "Some" | None -> "None");
+    Handshake_server13.answer_client_hello ?embed_quic_transport_params ~hrr:false state ch raw
   | protocol_version -> process protocol_version
 
 let answer_client_hello_reneg state (ch : client_hello) raw =
@@ -633,10 +640,17 @@ let handle_change_cipher_spec ss state packet =
   | _ -> Error (`Fatal (`Unexpected (`Message "change cipher spec")))
 
 let handle_handshake ?embed_quic_transport_params ss hs buf =
+  Printf.printf "XXXXX TLS.Handshake_server.handle_handshake ENTRY XXXXX\n%!";
+  Printf.printf "[TLS.Handshake_server.handle_handshake] Called with embed_quic_transport_params=%s\n%!"
+    (match embed_quic_transport_params with Some _ -> "Some" | None -> "None");
   let* handshake = map_reader_error (Reader.parse_handshake buf) in
+  Printf.printf "XXXXX After parse_handshake XXXXX\n%!";
+  Printf.printf "[TLS.Handshake_server.handle_handshake] Parsed handshake, ss=%s\n%!"
+    (match ss with AwaitClientHello -> "AwaitClientHello" | _ -> "Other");
   Tracing.hs ~tag:"handshake-in" handshake;
   match ss, handshake with
   | AwaitClientHello, ClientHello ch ->
+    Printf.printf "[TLS.Handshake_server.handle_handshake] AwaitClientHello+ClientHello, calling answer_client_hello\n%!";
     answer_client_hello ?embed_quic_transport_params hs ch buf
   | AwaitClientCertificate_RSA (session, log), Certificate cs ->
     let* cs = map_reader_error (Reader.parse_certificates cs) in

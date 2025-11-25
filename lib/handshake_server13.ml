@@ -258,11 +258,18 @@ let answer_client_hello ?embed_quic_transport_params ~hrr state ch raw =
         and early_data = if can_use_early_data && config.Config.zero_rtt <> 0l then [ `EarlyDataIndication ] else []
         and quic_transport_params_ext = match embed_quic_transport_params with
          | Some embed_quic_transport_params ->
+           Printf.printf "[TLS.Handshake_server13] Calling embed_quic_transport_params callback\n%!";
            begin match embed_quic_transport_params session.quic_transport_parameters with
-           | Some server_params -> [ `QUICTransportParameters server_params ]
-           | None -> []
+           | Some server_params ->
+             Printf.printf "[TLS.Handshake_server13] Got server params: %d bytes, adding to EncryptedExtensions\n%!" (String.length server_params);
+             [ `QUICTransportParameters server_params ]
+           | None ->
+             Printf.printf "[TLS.Handshake_server13] embed_quic_transport_params returned None!\n%!";
+             []
            end
-         | None -> []
+         | None ->
+           Printf.printf "[TLS.Handshake_server13] No embed_quic_transport_params callback provided!\n%!";
+           []
         in
         EncryptedExtensions (hostname_ext @ alpn @ early_data @ quic_transport_params_ext)
       in
