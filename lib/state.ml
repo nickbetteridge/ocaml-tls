@@ -51,6 +51,7 @@ type dh_secret = [
   | `P384 of Mirage_crypto_ec.P384.Dh.secret
   | `P521 of Mirage_crypto_ec.P521.Dh.secret
   | `X25519 of Mirage_crypto_ec.X25519.secret
+  | `X25519_MLKEM768 of Mirage_crypto_ec.X25519.secret * string (* X25519 secret + ML-KEM decapsulation key *)
 ]
 
 (* a collection of client and server verify bytes for renegotiation *)

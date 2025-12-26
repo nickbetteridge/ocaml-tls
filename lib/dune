@@ -2,4 +2,4 @@
  (name tls)
  (public_name tls)
  (libraries logs kdf.hkdf ohex digestif mirage-crypto mirage-crypto-rng
-   mirage-crypto-pk x509 domain-name fmt mirage-crypto-ec ipaddr))
+   mirage-crypto-pk mirage-crypto-pqc x509 domain-name fmt mirage-crypto-ec ipaddr))

@@ -255,7 +255,7 @@ and handshake =
         count name begin fun group ->
           let cipher = match group with
             | `FFDHE4096 | `FFDHE6144 | `FFDHE8192 | `FFDHE2048 | `FFDHE3072 -> `DHE_RSA_WITH_CHACHA20_POLY1305_SHA256
-            | `X25519 | `P256 | `P384 | `P521 -> `ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256
+            | `X25519_MLKEM768 | `X25519 | `P256 | `P384 | `P521 -> `ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256
           in
           let state = make ~groups:[ group ] ~cipher ~digest:`SHA256 ~key `TLS_1_2 `To_server in
           ignore (once state None)

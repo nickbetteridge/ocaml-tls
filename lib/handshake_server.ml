@@ -175,6 +175,8 @@ let answer_client_key_exchange_DHE state session secret kex raw log =
       Option.to_result
         ~none:(`Fatal (`Handshake (`BadDH "invalid FF")))
         (Mirage_crypto_pk.Dh.shared secret share)
+    | `X25519_MLKEM768 _ ->
+      Error (`Fatal (`Handshake (`Message "X25519_MLKEM768 not supported for pre-1.3 key exchange")))
   in
   Ok (establish_master_secret state session pms raw log)
 
@@ -401,6 +403,9 @@ let answer_client_hello_common state reneg ch raw =
           let secret, shared = X25519.gen_key () in
           let params = Writer.assemble_ec_parameters `X25519 shared in
           Ok (`X25519 secret, params)
+        | `X25519_MLKEM768 ->
+          (* Hybrid X25519 + ML-KEM-768 is only for TLS 1.3 *)
+          Error (`Fatal (`Handshake (`Message "X25519_MLKEM768 not supported for pre-1.3 key exchange")))
     in
     let data = String.concat "" [
         session.common_session_data.client_random ;

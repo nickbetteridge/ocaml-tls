@@ -442,6 +442,8 @@ type named_group =
   | FFDHE6144       [@id 259] (*RFC8446*)
   | FFDHE8192       [@id 260] (*RFC8446*)
   (* FFDHE_PRIVATE_USE 0x01FC - 0x01FF *)
+  (* Hybrid Post-Quantum Key Exchange - draft-ietf-tls-ecdhe-mlkem *)
+  | X25519MLKEM768  [@id 0x6399]
   (* ECDHE_PRIVATE_USE 0xFE00 - 0xFEFF *)
   (* OBSOLETE_RESERVED 0xFF01 - 0xFF02 *)
 
@@ -458,6 +460,7 @@ let named_group_to_int = function
   | FFDHE6144       -> 259 (*RFC8446*)
   | FFDHE8192       -> 260 (*RFC8446*)
   (* FFDHE_PRIVATE_USE 0x01FC - 0x01FF *)
+  | X25519MLKEM768  -> 0x6399 (*draft-ietf-tls-ecdhe-mlkem*)
   (* ECDHE_PRIVATE_USE 0xFE00 - 0xFEFF *)
   (* OBSOLETE_RESERVED 0xFF01 - 0xFF02 *)
 and int_to_named_group = function
@@ -471,6 +474,7 @@ and int_to_named_group = function
   | 258 -> Some FFDHE4096
   | 259 -> Some FFDHE6144
   | 260 -> Some FFDHE8192
+  | 0x6399 -> Some X25519MLKEM768
   | _ -> None
 
 (** enum of all TLS ciphersuites *)

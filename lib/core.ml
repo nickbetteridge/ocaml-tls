@@ -155,6 +155,7 @@ type group = [
   | `P256
   | `P384
   | `P521
+  | `X25519_MLKEM768  (* Hybrid post-quantum: X25519 + ML-KEM-768 *)
 ]
 
 let pp_group ppf = function
@@ -167,6 +168,7 @@ let pp_group ppf = function
   | `P256 -> Fmt.string ppf "P256"
   | `P384 -> Fmt.string ppf "P384"
   | `P521 -> Fmt.string ppf "P521"
+  | `X25519_MLKEM768 -> Fmt.string ppf "X25519_MLKEM768"
 
 let named_group_to_group = function
   | FFDHE2048 -> Some `FFDHE2048
@@ -178,6 +180,7 @@ let named_group_to_group = function
   | SECP256R1 -> Some `P256
   | SECP384R1 -> Some `P384
   | SECP521R1 -> Some `P521
+  | X25519MLKEM768 -> Some `X25519_MLKEM768
   | _ -> None
 
 let group_to_named_group = function
@@ -190,6 +193,7 @@ let group_to_named_group = function
   | `P256 -> SECP256R1
   | `P384 -> SECP384R1
   | `P521 -> SECP521R1
+  | `X25519_MLKEM768 -> X25519MLKEM768
 
 let group_to_impl = function
   | `FFDHE2048 -> `Finite_field Mirage_crypto_pk.Dh.Group.ffdhe2048
@@ -201,6 +205,7 @@ let group_to_impl = function
   | `P256 -> `P256
   | `P384 -> `P384
   | `P521 -> `P521
+  | `X25519_MLKEM768 -> `X25519_MLKEM768
 
 type signature_algorithm = [
   | `RSA_PKCS1_MD5

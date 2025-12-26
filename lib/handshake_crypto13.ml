@@ -44,7 +44,29 @@ let dh_shared secret share =
      | `P256 priv -> map_ecdh_error (P256.Dh.key_exchange priv share)
      | `P384 priv -> map_ecdh_error (P384.Dh.key_exchange priv share)
      | `P521 priv -> map_ecdh_error (P521.Dh.key_exchange priv share)
-     | `X25519 priv -> map_ecdh_error (X25519.key_exchange priv share))
+     | `X25519 priv -> map_ecdh_error (X25519.key_exchange priv share)
+     | `X25519_MLKEM768 (x25519_priv, mlkem_dk) ->
+       (* Hybrid X25519 + ML-KEM-768 - draft-ietf-tls-ecdhe-mlkem
+          Peer's share format: ML-KEM ciphertext (1088) || X25519 public (32)
+          Shared secret: ML-KEM SS (32) || X25519 SS (32) *)
+       let mlkem_ct_len = Mirage_crypto_pqc.ML_KEM_768.ct_len in
+       let x25519_len = 32 in
+       let expected_len = mlkem_ct_len + x25519_len in
+       let* () =
+         guard (String.length share = expected_len)
+           (`Fatal (`Handshake (`BadDH "invalid hybrid share length")))
+       in
+       let mlkem_ct = String.sub share 0 mlkem_ct_len in
+       let x25519_share = String.sub share mlkem_ct_len x25519_len in
+       (* Compute X25519 shared secret *)
+       let* x25519_ss = map_ecdh_error (X25519.key_exchange x25519_priv x25519_share) in
+       (* Decapsulate ML-KEM *)
+       let* mlkem_ss =
+         Result.map_error (fun msg -> `Fatal (`Handshake (`BadDH msg)))
+           (Mirage_crypto_pqc.ML_KEM_768.decapsulate mlkem_dk mlkem_ct)
+       in
+       (* Combined shared secret: ML-KEM SS || X25519 SS *)
+       Ok (mlkem_ss ^ x25519_ss))
 
 let dh_gen_key group =
   (* RFC 8556, Section 4.2.8.1 - we need zero-padding on the left *)
@@ -64,6 +86,14 @@ let dh_gen_key group =
   | `X25519 ->
     let secret, shared = Mirage_crypto_ec.X25519.gen_key () in
     `X25519 secret, shared
+  | `X25519_MLKEM768 ->
+    (* Hybrid X25519 + ML-KEM-768 - draft-ietf-tls-ecdhe-mlkem
+       Key share format: ML-KEM encapsulation key (1184) || X25519 public (32) *)
+    let x25519_secret, x25519_share = Mirage_crypto_ec.X25519.gen_key () in
+    let mlkem_ek, mlkem_dk = Mirage_crypto_pqc.ML_KEM_768.generate () in
+    (* Combined share: ML-KEM ek || X25519 public *)
+    let combined_share = mlkem_ek ^ x25519_share in
+    `X25519_MLKEM768 (x25519_secret, mlkem_dk), combined_share
 
 let trace tag cs = Tracing.cs ~tag:("crypto " ^ tag) cs
 
