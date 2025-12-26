@@ -764,3 +764,84 @@ let channel_binding e = function
       Error (`Msg "tls-unique not defined for TLS 1.3")
     | _, None -> Error (`Msg "couldn't find a tls-unique in the session data")
     | _, Some data -> Ok data
+
+(* QUIC integration functions *)
+
+let handshake_cipher13 state =
+  match state.handshake.machina with
+  | Client13 (AwaitServerEncryptedExtensions13 (session, _, _, _))
+  | Client13 (AwaitServerCertificateRequestOrCertificate13 (session, _, _, _))
+  | Client13 (AwaitServerCertificate13 (session, _, _, _, _))
+  | Client13 (AwaitServerCertificateVerify13 (session, _, _, _, _))
+  | Client13 (AwaitServerFinished13 (session, _, _, _, _))
+  | Server13 (AwaitClientCertificate13 (session, _, _, _, _))
+  | Server13 (AwaitClientCertificateVerify13 (session, _, _, _, _)) ->
+    Some session.ciphersuite13
+  | Client13 Established13 | Server13 Established13
+  | Server13 (AwaitClientFinished13 _) | Server13 (AwaitEndOfEarlyData13 _) ->
+    (* Use epoch data for established connections or late-stage server states *)
+    (match epoch state with
+     | Ok e -> Ciphersuite.ciphersuite_to_ciphersuite13 e.ciphersuite
+     | Error () -> None)
+  | _ -> None
+
+let handshake_quic_transport_params state =
+  match state.handshake.machina with
+  | Server13 (AwaitClientCertificate13 (session, _, _, _, _))
+  | Server13 (AwaitClientCertificateVerify13 (session, _, _, _, _)) ->
+    session.quic_transport_parameters
+  | Client13 (AwaitServerEncryptedExtensions13 (session, _, _, _))
+  | Client13 (AwaitServerCertificateRequestOrCertificate13 (session, _, _, _))
+  | Client13 (AwaitServerCertificate13 (session, _, _, _, _))
+  | Client13 (AwaitServerCertificateVerify13 (session, _, _, _, _))
+  | Client13 (AwaitServerFinished13 (session, _, _, _, _)) ->
+    session.quic_transport_parameters
+  | _ ->
+    (* For established connections or other states, use epoch data *)
+    match epoch state with
+    | Ok e -> e.quic_transport_parameters
+    | Error () -> None
+
+let handshake_state_string state =
+  match state.handshake.machina with
+  | Client ClientInitial -> "Client:ClientInitial"
+  | Client (AwaitServerHello _) -> "Client:AwaitServerHello"
+  | Client (AwaitServerHelloRenegotiate _) -> "Client:AwaitServerHelloRenegotiate"
+  | Client (AwaitCertificate_RSA _) -> "Client:AwaitCertificate_RSA"
+  | Client (AwaitCertificate_DHE _) -> "Client:AwaitCertificate_DHE"
+  | Client (AwaitServerKeyExchange_DHE _) -> "Client:AwaitServerKeyExchange_DHE"
+  | Client (AwaitCertificateRequestOrServerHelloDone _) -> "Client:AwaitCertificateRequestOrServerHelloDone"
+  | Client (AwaitServerHelloDone _) -> "Client:AwaitServerHelloDone"
+  | Client (AwaitServerChangeCipherSpec _) -> "Client:AwaitServerChangeCipherSpec"
+  | Client (AwaitServerChangeCipherSpecResume _) -> "Client:AwaitServerChangeCipherSpecResume"
+  | Client (AwaitServerFinished _) -> "Client:AwaitServerFinished"
+  | Client (AwaitServerFinishedResume _) -> "Client:AwaitServerFinishedResume"
+  | Client Established -> "Client:Established"
+  | Server AwaitClientHello -> "Server:AwaitClientHello"
+  | Server AwaitClientHelloRenegotiate -> "Server:AwaitClientHelloRenegotiate"
+  | Server (AwaitClientCertificate_RSA _) -> "Server:AwaitClientCertificate_RSA"
+  | Server (AwaitClientCertificate_DHE _) -> "Server:AwaitClientCertificate_DHE"
+  | Server (AwaitClientKeyExchange_RSA _) -> "Server:AwaitClientKeyExchange_RSA"
+  | Server (AwaitClientKeyExchange_DHE _) -> "Server:AwaitClientKeyExchange_DHE"
+  | Server (AwaitClientCertificateVerify _) -> "Server:AwaitClientCertificateVerify"
+  | Server (AwaitClientChangeCipherSpec _) -> "Server:AwaitClientChangeCipherSpec"
+  | Server (AwaitClientChangeCipherSpecResume _) -> "Server:AwaitClientChangeCipherSpecResume"
+  | Server (AwaitClientFinished _) -> "Server:AwaitClientFinished"
+  | Server (AwaitClientFinishedResume _) -> "Server:AwaitClientFinishedResume"
+  | Server Established -> "Server:Established"
+  | Client13 (AwaitServerHello13 _) -> "Client13:AwaitServerHello13"
+  | Client13 (AwaitServerEncryptedExtensions13 _) -> "Client13:AwaitServerEncryptedExtensions13"
+  | Client13 (AwaitServerCertificateRequestOrCertificate13 _) -> "Client13:AwaitServerCertificateRequestOrCertificate13"
+  | Client13 (AwaitServerCertificate13 _) -> "Client13:AwaitServerCertificate13"
+  | Client13 (AwaitServerCertificateVerify13 _) -> "Client13:AwaitServerCertificateVerify13"
+  | Client13 (AwaitServerFinished13 _) -> "Client13:AwaitServerFinished13"
+  | Client13 Established13 -> "Client13:Established13"
+  | Server13 AwaitClientHelloHRR13 -> "Server13:AwaitClientHelloHRR13"
+  | Server13 (AwaitClientCertificate13 _) -> "Server13:AwaitClientCertificate13"
+  | Server13 (AwaitClientCertificateVerify13 _) -> "Server13:AwaitClientCertificateVerify13"
+  | Server13 (AwaitClientFinished13 _) -> "Server13:AwaitClientFinished13"
+  | Server13 (AwaitEndOfEarlyData13 _) -> "Server13:AwaitEndOfEarlyData13"
+  | Server13 Established13 -> "Server13:Established13"
+
+let has_early_data state =
+  state.handshake.early_data_left > 0l

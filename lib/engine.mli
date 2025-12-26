@@ -35,10 +35,13 @@
     {e %%VERSION%%} *)
 
 
-(** {1 Abstract state type} *)
+(** {1 State type} *)
 
-(** The abstract type of a TLS state. *)
-type state
+(** The type of a TLS state. Exposed as equal to State.state to allow
+    the QUIC layer to directly access TLS handshake machinery.
+    Note: State.state is already publicly accessible, so this doesn't
+    expose any new internal details. *)
+type state = State.state
 
 (** {1 Constructors} *)
 
@@ -170,3 +173,25 @@ val export_key_material : Core.epoch_data -> ?context:string -> string -> int ->
 val channel_binding : Core.epoch_data ->
   [ `Tls_exporter | `Tls_unique | `Tls_server_endpoint ] ->
   (string, [ `Msg of string ]) result
+
+(** {1 QUIC integration} *)
+
+(** [handshake_cipher13 state] returns the TLS 1.3 ciphersuite negotiated
+    during handshake, if available. This is used by QUIC to derive keys
+    before the handshake completes. Returns [None] if the handshake hasn't
+    progressed far enough. *)
+val handshake_cipher13 : state -> Ciphersuite.ciphersuite13 option
+
+(** [handshake_quic_transport_params state] returns the peer's QUIC transport
+    parameters extracted during handshake, if available. Returns [None] if
+    the handshake hasn't progressed far enough or if no QUIC transport
+    parameters were received. *)
+val handshake_quic_transport_params : state -> string option
+
+(** [handshake_state_string state] returns a string describing the current
+    handshake state, useful for debugging. *)
+val handshake_state_string : state -> string
+
+(** [has_early_data state] returns true if the server has accepted 0-RTT
+    early data (early_data_left > 0). Used by QUIC to handle 0-RTT. *)
+val has_early_data : state -> bool
