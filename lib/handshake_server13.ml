@@ -264,10 +264,17 @@ let answer_client_hello ?embed_quic_transport_params ~hrr state ch raw =
            end
          | None -> []
         in
+        (* Debug: log what extensions are being included *)
+        Printf.printf "[TLS] EncryptedExtensions: hostname=%b alpn=%s early_data=%b quic_tp=%b\n%!"
+          (hostname_ext <> [])
+          (Option.value ~default:"<none>" alpn_protocol)
+          (early_data <> [])
+          (quic_transport_params_ext <> []);
         EncryptedExtensions (hostname_ext @ alpn @ early_data @ quic_transport_params_ext)
       in
       (* TODO also max_fragment_length ; client_certificate_url ; trusted_ca_keys ; user_mapping ; client_authz ; server_authz ; cert_type ; use_srtp ; heartbeat ; alpn ; status_request_v2 ; signed_cert_timestamp ; client_cert_type ; server_cert_type *)
       let ee_raw = Writer.assemble_handshake ee in
+      Printf.printf "[TLS] EncryptedExtensions message: %d bytes\n%!" (String.length ee_raw);
       Tracing.hs ~tag:"handshake-out" ee ;
       let log = log ^ ee_raw in
 
@@ -294,8 +301,17 @@ let answer_client_hello ?embed_quic_transport_params ~hrr state ch raw =
           in
 
           let certs = List.map X509.Certificate.encode_der chain in
-          let cert = Certificate (Writer.assemble_certificates_1_3 "" certs) in
+          (* Debug: log certificate chain info *)
+          Printf.printf "[TLS] Certificate chain has %d certs: %s\n%!"
+            (List.length certs)
+            (String.concat ", " (List.map (fun c -> string_of_int (String.length c) ^ " bytes") certs));
+          let cert_payload = Writer.assemble_certificates_1_3 "" certs in
+          Printf.printf "[TLS] Certificate payload: %d bytes (context=0, certs_list_len=%d)\n%!"
+            (String.length cert_payload)
+            (String.length cert_payload - 4); (* 1 byte context len + 3 bytes certs len *)
+          let cert = Certificate cert_payload in
           let cert_raw = Writer.assemble_handshake cert in
+          Printf.printf "[TLS] Full Certificate message: %d bytes\n%!" (String.length cert_raw);
           Tracing.hs ~tag:"handshake-out" cert ;
           let log = log ^ cert_raw in
 
