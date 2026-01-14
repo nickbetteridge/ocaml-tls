@@ -397,27 +397,9 @@ let signature version ?context_string data client_sig_algs signature_algorithms 
           ~none:(`Error (`NoConfiguredSignatureAlgorithm []))
           client_sig_algs
       in
-      Printf.printf "[TLS] TLS 1.3 signature selection: client_algos=%d server_algos=%d\n%!"
-        (List.length client_algos) (List.length signature_algorithms);
       let sa = List.filter tls13_sigalg signature_algorithms in
-      Printf.printf "[TLS] After tls13_sigalg filter: %d algos\n%!" (List.length sa);
       let sa = List.filter (pk_matches_sa private_key) sa in
-      Printf.printf "[TLS] After pk_matches_sa filter: %d algos\n%!" (List.length sa);
       let result = Utils.first_match client_algos sa in
-      Printf.printf "[TLS] Selected sig_alg: %s\n%!"
-        (match result with
-         | Some `RSA_PSS_RSAENC_SHA256 -> "RSA_PSS_RSAENC_SHA256"
-         | Some `RSA_PSS_RSAENC_SHA384 -> "RSA_PSS_RSAENC_SHA384"
-         | Some `RSA_PSS_RSAENC_SHA512 -> "RSA_PSS_RSAENC_SHA512"
-         | Some `RSA_PKCS1_SHA256 -> "RSA_PKCS1_SHA256"
-         | Some `RSA_PKCS1_SHA384 -> "RSA_PKCS1_SHA384"
-         | Some `RSA_PKCS1_SHA512 -> "RSA_PKCS1_SHA512"
-         | Some `ECDSA_SECP256R1_SHA256 -> "ECDSA_SECP256R1_SHA256"
-         | Some `ECDSA_SECP384R1_SHA384 -> "ECDSA_SECP384R1_SHA384"
-         | Some `ECDSA_SECP521R1_SHA512 -> "ECDSA_SECP521R1_SHA512"
-         | Some `ED25519 -> "ED25519"
-         | Some _ -> "OTHER"
-         | None -> "NONE");
       Option.to_result
         ~none:(`Error (`NoConfiguredSignatureAlgorithm client_algos))
         result

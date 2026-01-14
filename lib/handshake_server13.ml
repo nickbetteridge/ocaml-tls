@@ -4,17 +4,6 @@ open Handshake_common
 
 open Handshake_crypto13
 
-(* Hex dump helper for debugging TLS messages *)
-let hex_dump_string prefix s =
-  let len = String.length s in
-  Printf.printf "[HEX] %s (%d bytes):\n" prefix len;
-  for i = 0 to len - 1 do
-    Printf.printf "%02x " (Char.code (String.get s i));
-    if (i + 1) mod 16 = 0 then Printf.printf "\n"
-  done;
-  if len mod 16 <> 0 then Printf.printf "\n";
-  Printf.printf "%!"
-
 let answer_client_hello ?embed_quic_transport_params ~hrr state ch raw =
   let* () = client_hello_valid `TLS_1_3 ch in
   let* () =
@@ -133,8 +122,6 @@ let answer_client_hello ?embed_quic_transport_params ~hrr state ch raw =
       in
 
       let hostname = hostname ch in
-      Printf.printf "[TLS] Client SNI hostname: %s\n%!"
-        (Option.fold ~none:"<none>" ~some:Domain_name.to_string hostname);
       let hlen =
         let module H = (val Digestif.module_of_hash' (Ciphersuite.hash13 cipher)) in
         H.digest_size
@@ -277,18 +264,10 @@ let answer_client_hello ?embed_quic_transport_params ~hrr state ch raw =
            end
          | None -> []
         in
-        (* Debug: log what extensions are being included *)
-        Printf.printf "[TLS] EncryptedExtensions: hostname=%b alpn=%s early_data=%b quic_tp=%b\n%!"
-          (hostname_ext <> [])
-          (Option.value ~default:"<none>" alpn_protocol)
-          (early_data <> [])
-          (quic_transport_params_ext <> []);
         EncryptedExtensions (hostname_ext @ alpn @ early_data @ quic_transport_params_ext)
       in
       (* TODO also max_fragment_length ; client_certificate_url ; trusted_ca_keys ; user_mapping ; client_authz ; server_authz ; cert_type ; use_srtp ; heartbeat ; alpn ; status_request_v2 ; signed_cert_timestamp ; client_cert_type ; server_cert_type *)
       let ee_raw = Writer.assemble_handshake ee in
-      Printf.printf "[TLS] EncryptedExtensions message: %d bytes\n%!" (String.length ee_raw);
-      hex_dump_string "EncryptedExtensions" ee_raw;
       Tracing.hs ~tag:"handshake-out" ee ;
       let log = log ^ ee_raw in
 
@@ -315,18 +294,9 @@ let answer_client_hello ?embed_quic_transport_params ~hrr state ch raw =
           in
 
           let certs = List.map X509.Certificate.encode_der chain in
-          (* Debug: log certificate chain info *)
-          Printf.printf "[TLS] Certificate chain has %d certs: %s\n%!"
-            (List.length certs)
-            (String.concat ", " (List.map (fun c -> string_of_int (String.length c) ^ " bytes") certs));
           let cert_payload = Writer.assemble_certificates_1_3 "" certs in
-          Printf.printf "[TLS] Certificate payload: %d bytes (context=0, certs_list_len=%d)\n%!"
-            (String.length cert_payload)
-            (String.length cert_payload - 4); (* 1 byte context len + 3 bytes certs len *)
           let cert = Certificate cert_payload in
           let cert_raw = Writer.assemble_handshake cert in
-          Printf.printf "[TLS] Full Certificate message: %d bytes\n%!" (String.length cert_raw);
-          hex_dump_string "Certificate" cert_raw;
           Tracing.hs ~tag:"handshake-out" cert ;
           let log = log ^ cert_raw in
 
@@ -341,8 +311,6 @@ let answer_client_hello ?embed_quic_transport_params ~hrr state ch raw =
           in
           let cv = CertificateVerify signed in
           let cv_raw = Writer.assemble_handshake cv in
-          Printf.printf "[TLS] CertificateVerify message: %d bytes\n%!" (String.length cv_raw);
-          hex_dump_string "CertificateVerify" cv_raw;
           Tracing.hs ~tag:"handshake-out" cv ;
           let log = log ^ cv_raw in
           Ok (out @ [cert_raw; cv_raw], log, session)
@@ -354,8 +322,6 @@ let answer_client_hello ?embed_quic_transport_params ~hrr state ch raw =
       let f_data = finished hs_secret.hash server_hs_secret log in
       let fin = Finished f_data in
       let fin_raw = Writer.assemble_handshake fin in
-      Printf.printf "[TLS] Finished message: %d bytes\n%!" (String.length fin_raw);
-      hex_dump_string "Finished" fin_raw;
 
       Tracing.hs ~tag:"handshake-out" fin ;
 
