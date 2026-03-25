@@ -117,7 +117,7 @@ module Make (F : Mirage_flow.S) = struct
         let bufs = List.map Cstruct.to_string bufs in
         match Tls.Engine.send_application_data tls bufs with
         | Some (tls, answer) ->
-            flow.state <- `Active tls ;
+            flow.state <- inject_state tls flow.state ;
             write_flow flow answer
         | None ->
             (* "Impossible" due to handshake draining. *)
@@ -172,7 +172,7 @@ module Make (F : Mirage_flow.S) = struct
       match Tls.Engine.key_update ?request tls with
       | Error _ -> Lwt.return (Error (`Msg "Key update failed"))
       | Ok (tls', buf) ->
-        flow.state <- `Active tls' ;
+        flow.state <- inject_state tls' flow.state ;
         write_flow flow buf >|= function
         | Ok _ as o -> o
         | Error e   -> Error (e :> wr_or_msg)
