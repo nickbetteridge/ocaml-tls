@@ -198,26 +198,12 @@ let answer_server_hello_renegotiate state session (ch : client_hello) sh raw log
   in
   common_server_hello_machina state sh ch raw log
 
-let validate_keyusage certificate kex =
-  let usage = Ciphersuite.required_usage kex in
-  let* cert =
-    Option.to_result ~none:(`Fatal (`Bad_certificate "none received")) certificate
-  in
-  let* () =
-    guard (supports_key_usage ~not_present:true usage cert)
-      (`Fatal (`Bad_certificate "key usage"))
-  in
-  guard
-    (supports_extended_key_usage `Server_auth cert ||
-     supports_extended_key_usage ~not_present:true `Any cert)
-    (`Fatal (`Bad_certificate "extended key usage"))
-
 let answer_certificate_RSA state (session : session_data) cs raw log =
   let cfg = state.config in
   let* peer_certificate, received_certificates, peer_certificate_chain, trust_anchor =
     validate_chain cfg.authenticator cs cfg.ip cfg.peer_name
   in
-  let* () = validate_keyusage peer_certificate `RSA in
+  let* () = validate_server_keyusage peer_certificate `RSA in
   let session =
     let common_session_data = { session.common_session_data with received_certificates ; peer_certificate ; peer_certificate_chain ; trust_anchor } in
     { session with common_session_data }
@@ -249,7 +235,7 @@ let answer_certificate_DHE state (session : session_data) cs raw log =
   let* peer_certificate, received_certificates, peer_certificate_chain, trust_anchor =
     validate_chain cfg.authenticator cs cfg.ip cfg.peer_name
   in
-  let* () = validate_keyusage peer_certificate `FFDHE in
+  let* () = validate_server_keyusage peer_certificate `FFDHE in
   let session =
     let common_session_data = { session.common_session_data with received_certificates ; peer_certificate ; peer_certificate_chain ; trust_anchor } in
     { session with common_session_data }
